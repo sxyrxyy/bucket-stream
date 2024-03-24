@@ -17,6 +17,7 @@ import os
 import signal
 import time
 import json
+import subprocess
 from threading import Lock
 from threading import Event
 from threading import Thread
@@ -181,6 +182,17 @@ class BucketWorker(Thread):
                              (ARGS.only_interesting and any(keyword in bucket_response.text for keyword in KEYWORDS))):
                 self.__output("Found bucket '{}'".format(new_bucket_url), "green")
                 self.__log(new_bucket_url)
+
+                command = f's3scanner -bucket {new_bucket_url}'
+                completed_process = subprocess.run(command, shell=True, text=True, capture_output=True)
+                if completed_process.returncode == 0:
+                    print("Command executed successfully!")
+                    print("Output:\n", completed_process.stdout)
+                    with open('s3scanner_log.txt', 'a') as f:
+                        f.write(completed_process.stdout + '\n')
+                else:
+                    print("Command failed with return code:", completed_process.returncode)
+                    print("Error Output:\n", completed_process.stderr)
 
     def __check_boto(self, bucket_url):
         bucket_name = bucket_url.replace(".s3.amazonaws.com", "")
